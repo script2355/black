@@ -46,7 +46,7 @@ local text = Instance.new("TextLabel")
 text.Size = UDim2.new(1, 0, 1, 0)
 text.BackgroundTransparency = 1
 text.TextColor3 = Color3.fromRGB(200,200,200)
-text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer com chão\n[V] Teleporte -50\n[E] Segurar Brainrot\n[F] Mostrar/Esconder painel"
+text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer com chão\n[V] Teleporte -50\n[F] Segurar Brainrot\n[G] Mostrar/Esconder painel"
 text.Font = Enum.Font.SourceSansBold
 text.TextSize = 16
 text.TextYAlignment = Enum.TextYAlignment.Top
@@ -55,7 +55,7 @@ text.Parent = frame
 -- Mostrar/ocultar painel
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
-    if input.KeyCode == Enum.KeyCode.F then
+    if input.KeyCode == Enum.KeyCode.G then  -- Mudei para G para não conflitar com F
         gui.Enabled = not gui.Enabled
     end
 end)
@@ -136,7 +136,7 @@ local function teleportar50ParaBaixo()
     end
 end
 
--- Segura o ProximityPrompt por HOLD_TIME segundos (E)
+-- Segura o ProximityPrompt por HOLD_TIME segundos (F)
 local function segurarBrainrot()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -167,7 +167,9 @@ UserInputService.InputBegan:Connect(function(input, gp)
         descer()
     elseif input.KeyCode == Enum.KeyCode.V then
         teleportar50ParaBaixo()
-    elseif input.KeyCode == Enum.KeyCode.E then
+    elseif input.KeyCode == Enum.KeyCode.F then
         segurarBrainrot()
+    elseif input.KeyCode == Enum.KeyCode.G then
+        gui.Enabled = not gui.Enabled
     end
 end)
