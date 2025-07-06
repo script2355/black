@@ -1,193 +1,117 @@
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
-local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local StarterGui = game:GetService("StarterGui")
 
-local ALTURA_CEU = 1000
-local ALTURA_DESCIDA = 5
-local CHECAR_CHAO = true
-local noclipOn = false
-
--- GUI
+-- Criar GUI principal
 local gui = Instance.new("ScreenGui")
-gui.Name = "ProtegidoGUI_" .. HttpService:GenerateGUID(false):gsub("-", ""):sub(1, 8)
+gui.Name = "BrainrotInterface"
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-gui.Enabled = false
+gui.ResetOnSpawn = false
+gui.Enabled = true
 
+-- Criar janela principal
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 270, 0, 140)
-frame.Position = UDim2.new(0.5, -135, 0.5, -70)
+frame.Size = UDim2.new(0, 280, 0, 180)
+frame.Position = UDim2.new(0.5, -140, 0.5, -90)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
-frame.BackgroundTransparency = 0.3
-frame.ZIndex = 9999
+frame.BackgroundTransparency = 0.15
+frame.Active = true
+frame.Draggable = true
 frame.Parent = gui
+frame.ClipsDescendants = true
 
-local text = Instance.new("TextLabel")
-text.Size = UDim2.new(1, 0, 1, 0)
-text.BackgroundTransparency = 1
-text.TextColor3 = Color3.fromRGB(200,200,200)
-text.Text = "🛡️ Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer com chão\n[V] Teleporte -50\n[N] Noclip\n[G] Roubar Brainrot\n[F] Mostrar/Esconder painel"
-text.Font = Enum.Font.SourceSansBold
-text.TextSize = 16
-text.TextYAlignment = Enum.TextYAlignment.Top
-text.Parent = frame
+-- Cantos arredondados
+local uicorner = Instance.new("UICorner", frame)
+uicorner.CornerRadius = UDim.new(0, 12)
 
--- ANTI AFK
-task.spawn(function()
-    while true do
-        wait(20 + math.random(5))
-        pcall(function()
-            local vu = game:GetService("VirtualUser")
-            vu:Button2Down(Vector2.new(math.random(0,10), math.random(0,10)), Workspace.CurrentCamera.CFrame)
-            wait(0.5 + math.random())
-            vu:Button2Up(Vector2.new(math.random(0,10), math.random(0,10)), Workspace.CurrentCamera.CFrame)
-        end)
-    end
-end)
+-- Título
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "Brainrot Hub"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.Parent = frame
 
--- Noclip
-local function toggleNoclip()
-    noclipOn = not noclipOn
-    local char = LocalPlayer.Character
-    if char then
-        for _, part in pairs(char:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = not noclipOn
-            end
+-- Criar botão
+local function criarBotao(texto, ordem, callback)
+    local botao = Instance.new("TextButton")
+    botao.Size = UDim2.new(0.9, 0, 0, 32)
+    botao.Position = UDim2.new(0.05, 0, 0, 35 + (ordem - 1) * 38)
+    botao.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    botao.TextColor3 = Color3.fromRGB(255, 255, 255)
+    botao.Font = Enum.Font.Gotham
+    botao.TextSize = 16
+    botao.Text = texto
+    botao.AutoButtonColor = true
+    botao.Parent = frame
+    Instance.new("UICorner", botao).CornerRadius = UDim.new(0, 6)
+    botao.MouseButton1Click:Connect(callback)
+end
+
+-- Função: Roubar Brainrot (simula G)
+local function roubarBrainrot()
+    local prompt
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent:IsA("Model") then
+            prompt = obj
+            break
         end
     end
-    StarterGui:SetCore("SendNotification", {
-        Title = "Noclip",
-        Text = noclipOn and "Ativado" or "Desativado",
-        Duration = 2
-    })
-end
-
--- Teleporte Céu
-local function teleportarParaOCeu()
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(
-            hrp.Position.X, ALTURA_CEU, hrp.Position.Z,
-            hrp.CFrame.LookVector.X, 0, hrp.CFrame.LookVector.Z,
-            0, 1, 0,
-            -hrp.CFrame.LookVector.Z, 0, hrp.CFrame.LookVector.X
-        )
-        StarterGui:SetCore("SendNotification", {
-            Title = "Teleporte",
-            Text = "Teleportado para o céu!",
-            Duration = 2
-        })
+    if prompt then
+        fireproximityprompt(prompt, 0)
     end
 end
 
--- Descer com Raycast
+-- Função: Teleporte para o céu
+local function teleportarCeu()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + Vector3.new(0, 1000, 0)
+    end
+end
+
+-- Função: Descer
 local function descer()
     local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not hrp then return end
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame - Vector3.new(0, 5, 0)
+    end
+end
 
-    if hum then hum.PlatformStand = true end
-
-    if CHECAR_CHAO then
-        local params = RaycastParams.new()
-        params.FilterDescendantsInstances = {char}
-        params.FilterType = Enum.RaycastFilterType.Blacklist
-        local result = Workspace:Raycast(hrp.Position, Vector3.new(0, -100, 0), params)
-
-        if result and result.Instance and result.Instance.CanCollide then
-            hrp.CFrame = CFrame.new(result.Position + Vector3.new(0, 3, 0))
-        else
-            hrp.CFrame = hrp.CFrame + Vector3.new(0, -ALTURA_DESCIDA, 0)
+-- Noclip toggle
+local noclip = false
+local RunService = game:GetService("RunService")
+RunService.Stepped:Connect(function()
+    if noclip then
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChildOfClass("Humanoid") then
+            char:FindFirstChildOfClass("Humanoid"):ChangeState(11)
         end
-    else
-        hrp.CFrame = hrp.CFrame + Vector3.new(0, -ALTURA_DESCIDA, 0)
-    end
-
-    if hum then
-        task.delay(0.2, function()
-            hum.PlatformStand = false
-        end)
-    end
-end
-
--- Teleportar -50 pra baixo
-local function teleportar50ParaBaixo()
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame + Vector3.new(0, -50, 0)
-        StarterGui:SetCore("SendNotification", {
-            Title = "Teleporte",
-            Text = "Desceu 50 unidades.",
-            Duration = 2
-        })
-    end
-end
-
--- Pulo Infinito
-UserInputService.JumpRequest:Connect(function()
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChildOfClass("Humanoid") then
-        char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
--- Roubar Brainrot com fireproximityprompt
-local function segurarPrompt()
-    local prompt = nil
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+-- Botões na interface
+criarBotao("🔓 Roubar Brainrot (G)", 1, roubarBrainrot)
+criarBotao("☁️ Teleporte para o Céu (C)", 2, teleportarCeu)
+criarBotao("⬇️ Descer (Q)", 3, descer)
+criarBotao("🚪 Toggle Noclip (N)", 4, function() noclip = not noclip end)
 
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") and v.Enabled then
-            local distance = (v.Parent.Position - char.HumanoidRootPart.Position).Magnitude
-            if distance < 12 then
-                prompt = v
-                break
-            end
-        end
-    end
-
-    if prompt then
-        fireproximityprompt(prompt, 1) -- segura por 1 segundo
-        StarterGui:SetCore("SendNotification", {
-            Title = "Brainrot",
-            Text = "Segurando para roubar...",
-            Duration = 2
-        })
-    else
-        StarterGui:SetCore("SendNotification", {
-            Title = "Erro",
-            Text = "Nenhum Brainrot próximo!",
-            Duration = 2
-        })
-    end
-end
-
--- Teclas
+-- Atalhos de teclado
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
-
     if input.KeyCode == Enum.KeyCode.F then
         gui.Enabled = not gui.Enabled
+    elseif input.KeyCode == Enum.KeyCode.G then
+        roubarBrainrot()
     elseif input.KeyCode == Enum.KeyCode.C then
-        teleportarParaOCeu()
+        teleportarCeu()
     elseif input.KeyCode == Enum.KeyCode.Q then
         descer()
-    elseif input.KeyCode == Enum.KeyCode.V then
-        teleportar50ParaBaixo()
     elseif input.KeyCode == Enum.KeyCode.N then
-        toggleNoclip()
-    elseif input.KeyCode == Enum.KeyCode.G then
-        segurarPrompt()
+        noclip = not noclip
     end
 end)
