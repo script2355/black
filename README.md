@@ -55,7 +55,7 @@ text.Parent = frame
 -- Mostrar/ocultar painel
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
-    if input.KeyCode == Enum.KeyCode.G then  -- Mudei para G para não conflitar com F
+    if input.KeyCode == Enum.KeyCode.G then  -- Atalho para painel agora é G
         gui.Enabled = not gui.Enabled
     end
 end)
