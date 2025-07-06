@@ -11,34 +11,10 @@ local StarterGui = game:GetService("StarterGui")
 local ALTURA_CEU = 1000
 local ALTURA_DESCIDA = 5
 local CHECAR_CHAO = true
+
 local noclipOn = false
 
--- GUI
-local gui = Instance.new("ScreenGui")
-gui.Name = "ProtegidoGUI_" .. HttpService:GenerateGUID(false):gsub("-", ""):sub(1, 8)
-gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-gui.Enabled = false
-
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 270, 0, 140)
-frame.Position = UDim2.new(0.5, -135, 0.5, -70)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BorderSizePixel = 0
-frame.BackgroundTransparency = 0.3
-frame.ZIndex = 9999
-frame.Parent = gui
-
-local text = Instance.new("TextLabel")
-text.Size = UDim2.new(1, 0, 1, 0)
-text.BackgroundTransparency = 1
-text.TextColor3 = Color3.fromRGB(200,200,200)
-text.Text = "🛡️ Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer com chão\n[V] Teleporte -50\n[N] Noclip\n[G] Roubar Brainrot\n[F] Mostrar/Esconder painel"
-text.Font = Enum.Font.SourceSansBold
-text.TextSize = 16
-text.TextYAlignment = Enum.TextYAlignment.Top
-text.Parent = frame
-
--- ANTI AFK
+-- Anti-AFK
 task.spawn(function()
     while true do
         wait(20 + math.random(5))
@@ -51,7 +27,32 @@ task.spawn(function()
     end
 end)
 
--- Noclip
+-- GUI protegida
+local gui = Instance.new("ScreenGui")
+gui.Name = "ProtegidoGUI_" .. HttpService:GenerateGUID(false):gsub("-", ""):sub(1, 8)
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+gui.Enabled = false
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 270, 0, 120)
+frame.Position = UDim2.new(0.5, -135, 0.5, -60)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.BackgroundTransparency = 0.3
+frame.ZIndex = 9999
+frame.Parent = gui
+
+local text = Instance.new("TextLabel")
+text.Size = UDim2.new(1, 0, 1, 0)
+text.BackgroundTransparency = 1
+text.TextColor3 = Color3.fromRGB(200,200,200)
+text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer\n[V] Teleporte -50\n[N] Noclip\n[F] Mostrar/Esconder painel"
+text.Font = Enum.Font.SourceSansBold
+text.TextSize = 16
+text.TextYAlignment = Enum.TextYAlignment.Top
+text.Parent = frame
+
+-- Função para ativar/desativar noclip
 local function toggleNoclip()
     noclipOn = not noclipOn
     local char = LocalPlayer.Character
@@ -65,17 +66,37 @@ local function toggleNoclip()
     StarterGui:SetCore("SendNotification", {
         Title = "Noclip",
         Text = noclipOn and "Ativado" or "Desativado",
-        Duration = 2
+        Duration = 3
     })
 end
 
--- Teleporte Céu
+-- Mostrar/ocultar painel
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        gui.Enabled = not gui.Enabled
+    elseif input.KeyCode == Enum.KeyCode.N then
+        toggleNoclip()
+    end
+end)
+
+-- Pulo infinito
+UserInputService.JumpRequest:Connect(function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChildOfClass("Humanoid") then
+        char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+-- Teleporte para o céu
 local function teleportarParaOCeu()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.CFrame = CFrame.new(
-            hrp.Position.X, ALTURA_CEU, hrp.Position.Z,
+            hrp.Position.X,
+            ALTURA_CEU,
+            hrp.Position.Z,
             hrp.CFrame.LookVector.X, 0, hrp.CFrame.LookVector.Z,
             0, 1, 0,
             -hrp.CFrame.LookVector.Z, 0, hrp.CFrame.LookVector.X
@@ -83,12 +104,12 @@ local function teleportarParaOCeu()
         StarterGui:SetCore("SendNotification", {
             Title = "Teleporte",
             Text = "Teleportado para o céu!",
-            Duration = 2
+            Duration = 3
         })
     end
 end
 
--- Descer com Raycast
+-- Descer com Raycast (Q)
 local function descer()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -114,12 +135,14 @@ local function descer()
 
     if hum then
         task.delay(0.2, function()
-            hum.PlatformStand = false
+            if hum then
+                hum.PlatformStand = false
+            end
         end)
     end
 end
 
--- Teleportar -50 pra baixo
+-- Teleporte 50 pra baixo (V)
 local function teleportar50ParaBaixo()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -128,66 +151,19 @@ local function teleportar50ParaBaixo()
         StarterGui:SetCore("SendNotification", {
             Title = "Teleporte",
             Text = "Desceu 50 unidades.",
-            Duration = 2
+            Duration = 3
         })
     end
 end
 
--- Pulo Infinito
-UserInputService.JumpRequest:Connect(function()
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChildOfClass("Humanoid") then
-        char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
-
--- Segurar ProximityPrompt (Roubar Brainrot)
-local function segurarPrompt()
-    local prompt = nil
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") and v.Enabled and (v.Parent.Position - char.HumanoidRootPart.Position).Magnitude < 10 then
-            prompt = v
-            break
-        end
-    end
-
-    if prompt then
-        VirtualInputManager:SendKeyEvent(true, prompt.KeyboardKeyCode, false, game)
-        wait(0.5) -- tempo segurando
-        VirtualInputManager:SendKeyEvent(false, prompt.KeyboardKeyCode, false, game)
-
-        StarterGui:SetCore("SendNotification", {
-            Title = "Roubo",
-            Text = "Tentando roubar o Brainrot...",
-            Duration = 2
-        })
-    else
-        StarterGui:SetCore("SendNotification", {
-            Title = "Erro",
-            Text = "Nenhum Brainrot por perto!",
-            Duration = 2
-        })
-    end
-end
-
--- Teclas
+-- Atalhos para outras funções
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
-
-    if input.KeyCode == Enum.KeyCode.F then
-        gui.Enabled = not gui.Enabled
-    elseif input.KeyCode == Enum.KeyCode.C then
+    if input.KeyCode == Enum.KeyCode.C then
         teleportarParaOCeu()
     elseif input.KeyCode == Enum.KeyCode.Q then
         descer()
     elseif input.KeyCode == Enum.KeyCode.V then
         teleportar50ParaBaixo()
-    elseif input.KeyCode == Enum.KeyCode.N then
-        toggleNoclip()
-    elseif input.KeyCode == Enum.KeyCode.G then
-        segurarPrompt()
     end
 end)
