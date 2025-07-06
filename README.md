@@ -8,24 +8,12 @@ local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local StarterGui = game:GetService("StarterGui")
 
-local ALTURA_CEU = 1000 -- Altura para onde será teleportado ao apertar C
-local ALTURA_DESCIDA = 5 -- Quanto desce ao apertar Q
-local CHECAR_CHAO = true -- Se true, usa Raycast para encontrar chão
+local ALTURA_CEU = 1000
+local ALTURA_DESCIDA = 5
+local CHECAR_CHAO = true
+local RADIUS_ROUBO = 15 -- Distância máxima para ativar prompt
 
---[[ 
-    Base com segurança + pulo infinito + teleporte para o céu:
-    - Anti-AFK
-    - Delay aleatório
-    - Checagem segura
-    - Simulação de input real
-    - Interface protegida por F
-    - Pulo infinito (barra de espaço)
-    - Teleporte para o céu (C)
-    - Descer com chão (Q)
-    - Teleportar 50 pra baixo (V)
-]]
-
--- ANTI-AFK
+-- Anti-AFK
 task.spawn(function()
     while true do
         wait(20 + math.random(5))
@@ -38,32 +26,15 @@ task.spawn(function()
     end
 end)
 
--- Delay aleatório
-local function randomDelay(min, max)
-    wait(min + math.random() * (max - min))
-end
-
--- Checagem segura de existência
-local function safeCheck(obj)
-    return obj ~= nil and obj.Parent ~= nil
-end
-
--- Simulação de pulo
-local function simulateJump()
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-    wait(0.13 + math.random() * 0.09)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-end
-
--- Interface protegida por F
+-- GUI protegida
 local gui = Instance.new("ScreenGui")
 gui.Name = "ProtegidoGUI_" .. HttpService:GenerateGUID(false):gsub("-", ""):sub(1, 8)
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 gui.Enabled = false
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 270, 0, 140)
-frame.Position = UDim2.new(0.5, -135, 0.5, -70)
+frame.Size = UDim2.new(0, 270, 0, 160)
+frame.Position = UDim2.new(0.5, -135, 0.5, -80)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
 frame.BackgroundTransparency = 0.3
@@ -74,12 +45,13 @@ local text = Instance.new("TextLabel")
 text.Size = UDim2.new(1, 0, 1, 0)
 text.BackgroundTransparency = 1
 text.TextColor3 = Color3.fromRGB(200,200,200)
-text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer com chão\n[V] Teleporte -50\n[F] Mostrar/Esconder este painel"
+text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer com chão\n[V] Teleporte -50\n[E] Roubar próximo\n[F] Mostrar/Esconder painel"
 text.Font = Enum.Font.SourceSansBold
 text.TextSize = 16
 text.TextYAlignment = Enum.TextYAlignment.Top
 text.Parent = frame
 
+-- Mostrar/ocultar painel
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.F then
@@ -95,28 +67,28 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- Teleporte para o céu (C)
+-- Teleporte para o céu
 local function teleportarParaOCeu()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.CFrame = CFrame.new(
-            hrp.Position.X, 
-            ALTURA_CEU, 
-            hrp.Position.Z, 
-            hrp.CFrame.LookVector.X, 0, hrp.CFrame.LookVector.Z, 
-            0, 1, 0, 
+            hrp.Position.X,
+            ALTURA_CEU,
+            hrp.Position.Z,
+            hrp.CFrame.LookVector.X, 0, hrp.CFrame.LookVector.Z,
+            0, 1, 0,
             -hrp.CFrame.LookVector.Z, 0, hrp.CFrame.LookVector.X
         )
         StarterGui:SetCore("SendNotification", {
-            Title = "Teleporte";
-            Text = "Teleportado para o céu!";
-            Duration = 3;
+            Title = "Teleporte",
+            Text = "Teleportado para o céu!",
+            Duration = 3
         })
     end
 end
 
--- Descer com Raycast e segurança (Q)
+-- Descer com Raycast (Q)
 local function descer()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -149,7 +121,7 @@ local function descer()
     end
 end
 
--- ✅ Teleporte para baixo 50 (V)
+-- Teleporte 50 pra baixo (V)
 local function teleportar50ParaBaixo()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -163,7 +135,29 @@ local function teleportar50ParaBaixo()
     end
 end
 
--- Atalhos de teclado
+-- Roubar com tecla E (ativa ProximityPrompt próximo)
+local function roubarProximo()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") and v.Enabled and v.Parent and v.Parent:IsA("BasePart") then
+            local dist = (v.Parent.Position - hrp.Position).Magnitude
+            if dist <= RADIUS_ROUBO then
+                fireproximityprompt(v)
+                StarterGui:SetCore("SendNotification", {
+                    Title = "Roubo",
+                    Text = "Objeto roubado com sucesso!",
+                    Duration = 2
+                })
+                break
+            end
+        end
+    end
+end
+
+-- Atalhos
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.C then
@@ -172,5 +166,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
         descer()
     elseif input.KeyCode == Enum.KeyCode.V then
         teleportar50ParaBaixo()
+    elseif input.KeyCode == Enum.KeyCode.E then
+        roubarProximo()
     end
 end)
