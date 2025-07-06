@@ -11,8 +11,8 @@ local StarterGui = game:GetService("StarterGui")
 local ALTURA_CEU = 1000
 local ALTURA_DESCIDA = 5
 local CHECAR_CHAO = true
-local RADIUS_ROUBO = 15 -- Distância máxima para ativar prompt
-local HOLD_TIME = 20 -- Tempo em segundos para segurar o prompt
+
+local noclipOn = false
 
 -- Anti-AFK
 task.spawn(function()
@@ -34,8 +34,8 @@ gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 gui.Enabled = false
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 270, 0, 160)
-frame.Position = UDim2.new(0.5, -135, 0.5, -80)
+frame.Size = UDim2.new(0, 270, 0, 120)
+frame.Position = UDim2.new(0.5, -135, 0.5, -60)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
 frame.BackgroundTransparency = 0.3
@@ -46,17 +46,37 @@ local text = Instance.new("TextLabel")
 text.Size = UDim2.new(1, 0, 1, 0)
 text.BackgroundTransparency = 1
 text.TextColor3 = Color3.fromRGB(200,200,200)
-text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer com chão\n[V] Teleporte -50\n[F] Segurar Brainrot\n[G] Mostrar/Esconder painel"
+text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer\n[V] Teleporte -50\n[N] Noclip\n[F] Mostrar/Esconder painel"
 text.Font = Enum.Font.SourceSansBold
 text.TextSize = 16
 text.TextYAlignment = Enum.TextYAlignment.Top
 text.Parent = frame
 
+-- Função para ativar/desativar noclip
+local function toggleNoclip()
+    noclipOn = not noclipOn
+    local char = LocalPlayer.Character
+    if char then
+        for _, part in pairs(char:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = not noclipOn
+            end
+        end
+    end
+    StarterGui:SetCore("SendNotification", {
+        Title = "Noclip",
+        Text = noclipOn and "Ativado" or "Desativado",
+        Duration = 3
+    })
+end
+
 -- Mostrar/ocultar painel
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
-    if input.KeyCode == Enum.KeyCode.G then
+    if input.KeyCode == Enum.KeyCode.F then
         gui.Enabled = not gui.Enabled
+    elseif input.KeyCode == Enum.KeyCode.N then
+        toggleNoclip()
     end
 end)
 
@@ -136,37 +156,7 @@ local function teleportar50ParaBaixo()
     end
 end
 
--- Segura o ProximityPrompt por HOLD_TIME segundos (F)
-local function segurarBrainrot()
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    for _, v in pairs(Workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") and v.Enabled and v.Parent and v.Parent:IsA("BasePart") then
-            local dist = (v.Parent.Position - hrp.Position).Magnitude
-            if dist <= RADIUS_ROUBO then
-                StarterGui:SetCore("SendNotification", {
-                    Title = "Roubo",
-                    Text = "Iniciando roubo (segurando prompt)...",
-                    Duration = 3
-                })
-
-                fireproximityprompt(v, HOLD_TIME, Enum.UserInputType.Keyboard)
-                wait(HOLD_TIME)
-
-                StarterGui:SetCore("SendNotification", {
-                    Title = "Roubo",
-                    Text = "Roubo concluído (prompt segurado).",
-                    Duration = 3
-                })
-                break
-            end
-        end
-    end
-end
-
--- Atalhos
+-- Atalhos para outras funções
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.C then
@@ -175,9 +165,5 @@ UserInputService.InputBegan:Connect(function(input, gp)
         descer()
     elseif input.KeyCode == Enum.KeyCode.V then
         teleportar50ParaBaixo()
-    elseif input.KeyCode == Enum.KeyCode.F then
-        task.spawn(segurarBrainrot)
-    elseif input.KeyCode == Enum.KeyCode.G then
-        gui.Enabled = not gui.Enabled
     end
 end)
