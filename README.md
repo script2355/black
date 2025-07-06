@@ -8,8 +8,8 @@ local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local StarterGui = game:GetService("StarterGui")
 
-local ALTURA_CEU = 1000 -- Altura para onde será teleportado ao apertar C
-local ALTURA_DESCIDA = 10 -- Quanto desce ao apertar Q
+local ALTURA_CEU = 105 -- Altura para onde será teleportado ao apertar C
+local ALTURA_DESCIDA = 100 -- Quanto desce ao apertar Q
 local CHECAR_CHAO = true -- Se true, usa Raycast para encontrar chão
 
 --[[ 
