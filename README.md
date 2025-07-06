@@ -70,4 +70,124 @@ local function toggleNoclip()
 end
 
 -- Teleporte Céu
-local
+local function teleportarParaOCeu()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = CFrame.new(
+            hrp.Position.X, ALTURA_CEU, hrp.Position.Z,
+            hrp.CFrame.LookVector.X, 0, hrp.CFrame.LookVector.Z,
+            0, 1, 0,
+            -hrp.CFrame.LookVector.Z, 0, hrp.CFrame.LookVector.X
+        )
+        StarterGui:SetCore("SendNotification", {
+            Title = "Teleporte",
+            Text = "Teleportado para o céu!",
+            Duration = 2
+        })
+    end
+end
+
+-- Descer com Raycast
+local function descer()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp then return end
+
+    if hum then hum.PlatformStand = true end
+
+    if CHECAR_CHAO then
+        local params = RaycastParams.new()
+        params.FilterDescendantsInstances = {char}
+        params.FilterType = Enum.RaycastFilterType.Blacklist
+        local result = Workspace:Raycast(hrp.Position, Vector3.new(0, -100, 0), params)
+
+        if result and result.Instance and result.Instance.CanCollide then
+            hrp.CFrame = CFrame.new(result.Position + Vector3.new(0, 3, 0))
+        else
+            hrp.CFrame = hrp.CFrame + Vector3.new(0, -ALTURA_DESCIDA, 0)
+        end
+    else
+        hrp.CFrame = hrp.CFrame + Vector3.new(0, -ALTURA_DESCIDA, 0)
+    end
+
+    if hum then
+        task.delay(0.2, function()
+            hum.PlatformStand = false
+        end)
+    end
+end
+
+-- Teleportar -50 pra baixo
+local function teleportar50ParaBaixo()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame + Vector3.new(0, -50, 0)
+        StarterGui:SetCore("SendNotification", {
+            Title = "Teleporte",
+            Text = "Desceu 50 unidades.",
+            Duration = 2
+        })
+    end
+end
+
+-- Pulo Infinito
+UserInputService.JumpRequest:Connect(function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChildOfClass("Humanoid") then
+        char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+-- Segurar ProximityPrompt (Roubar Brainrot)
+local function segurarPrompt()
+    local prompt = nil
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") and v.Enabled and (v.Parent.Position - char.HumanoidRootPart.Position).Magnitude < 10 then
+            prompt = v
+            break
+        end
+    end
+
+    if prompt then
+        VirtualInputManager:SendKeyEvent(true, prompt.KeyboardKeyCode, false, game)
+        wait(0.5) -- tempo segurando
+        VirtualInputManager:SendKeyEvent(false, prompt.KeyboardKeyCode, false, game)
+
+        StarterGui:SetCore("SendNotification", {
+            Title = "Roubo",
+            Text = "Tentando roubar o Brainrot...",
+            Duration = 2
+        })
+    else
+        StarterGui:SetCore("SendNotification", {
+            Title = "Erro",
+            Text = "Nenhum Brainrot por perto!",
+            Duration = 2
+        })
+    end
+end
+
+-- Teclas
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+
+    if input.KeyCode == Enum.KeyCode.F then
+        gui.Enabled = not gui.Enabled
+    elseif input.KeyCode == Enum.KeyCode.C then
+        teleportarParaOCeu()
+    elseif input.KeyCode == Enum.KeyCode.Q then
+        descer()
+    elseif input.KeyCode == Enum.KeyCode.V then
+        teleportar50ParaBaixo()
+    elseif input.KeyCode == Enum.KeyCode.N then
+        toggleNoclip()
+    elseif input.KeyCode == Enum.KeyCode.G then
+        segurarPrompt()
+    end
+end)
