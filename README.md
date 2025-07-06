@@ -6,20 +6,24 @@ local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local StarterGui = game:GetService("StarterGui")
+
+local ALTURA_EXTRA = 4 -- Altura acima do centro da parte/modelo
+local ALTURA_DESCIDA = 5 -- Quanto desce ao apertar Q
 
 --[[ 
-    Segurança + pulo infinito + teleporte para o céu + teleporte para zona de coleta da base (com bypass de barreira):
-    - [Espaço] Pulo Infinito
-    - [C] Teleporte Céu
-    - [V] Teleporte para zona de coleta (chega por cima para evitar barreira)
-    - [F] Interface proteção
+    Base com segurança + pulo infinito + teleporte universal:
+    - Anti-AFK
+    - Delay aleatório
+    - Checagem segura
+    - Simulação de input real
+    - Interface protegida por F
+    - Pulo infinito (barra de espaço)
+    - Teleporte universal (T)
+    - Descer (Q)
 ]]
 
-local ZONA_NOMES = {
-    "ZonaDeColeta", "Zona de Coleta", "ZONA DE COLETA", "Coleta", "ColetaArea", "DropZone"
-}
-
--- Anti-AFK usando VirtualUser
+-- ANTI-AFK
 task.spawn(function()
     while true do
         wait(20 + math.random(5))
@@ -32,14 +36,24 @@ task.spawn(function()
     end
 end)
 
+-- Delay aleatório
 local function randomDelay(min, max)
     wait(min + math.random() * (max - min))
 end
 
+-- Checagem segura de existência
 local function safeCheck(obj)
     return obj ~= nil and obj.Parent ~= nil
 end
 
+-- Simulação de pulo
+local function simulateJump()
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+    wait(0.13 + math.random() * 0.09)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+end
+
+-- Interface protegida por F
 local gui = Instance.new("ScreenGui")
 gui.Name = "ProtegidoGUI_" .. HttpService:GenerateGUID(false):gsub("-", ""):sub(1, 8)
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
@@ -58,7 +72,7 @@ local text = Instance.new("TextLabel")
 text.Size = UDim2.new(1, 0, 1, 0)
 text.BackgroundTransparency = 1
 text.TextColor3 = Color3.fromRGB(200,200,200)
-text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte Céu\n[V] Zona de Coleta (bypass barreira)"
+text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[T] Teleporte Universal\n[Q] Descer"
 text.Font = Enum.Font.SourceSansBold
 text.TextSize = 16
 text.TextYAlignment = Enum.TextYAlignment.Top
@@ -79,61 +93,70 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- Teleporte para o céu ao apertar C
-local function teleportarParaOCeu()
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(
-            hrp.Position.X, 
-            1000, 
-            hrp.Position.Z, 
-            hrp.CFrame.LookVector.X, 0, hrp.CFrame.LookVector.Z, 
-            0, 1, 0, 
-            -hrp.CFrame.LookVector.Z, 0, hrp.CFrame.LookVector.X
-        )
-    end
+-- Caixa de input (pelo chat) para teleporte universal
+local function promptNomeParteUniversal(callback)
+    StarterGui:SetCore("SendNotification", {
+        Title = "Teleporte Universal";
+        Text = "Digite o nome da parte/modelo no chat!";
+        Duration = 5;
+    })
+    local connection
+    connection = LocalPlayer.Chatted:Connect(function(msg)
+        if callback then callback(msg) end
+        if connection then connection:Disconnect() end
+    end)
 end
 
--- Procurar zona de coleta
-local function procurarZonaDeColeta()
-    for _, nome in ipairs(ZONA_NOMES) do
-        local zona = Workspace:FindFirstChild(nome)
-        if zona and zona:IsA("BasePart") then
-            return zona
-        elseif zona and zona:IsA("Model") and zona.PrimaryPart then
-            return zona.PrimaryPart
-        end
-    end
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name:lower():find("coleta") then
-            return obj
-        end
-    end
-    return nil
-end
-
--- Teleporte para zona de coleta por cima (bypass barreira)
-local function teleportarParaZonaDeColeta()
+-- Teleporte universal para o centro de qualquer parte/modelo
+local function teleportarParaNomeUniversal(nomeParte)
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    local zona = procurarZonaDeColeta()
-    if zona then
-        -- Primeiro teleporta bem acima (Y+20)
-        hrp.CFrame = CFrame.new(zona.Position + Vector3.new(0, 20, 0))
-        wait(0.5)
-        -- Depois desce para a posição certa (Y+4)
-        hrp.CFrame = CFrame.new(zona.Position + Vector3.new(0, 4, 0))
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name:lower():find(nomeParte:lower()) then
+            local destino = obj.Position + Vector3.new(0, ALTURA_EXTRA, 0)
+            -- Proteção para chão sólido
+            local params = RaycastParams.new()
+            params.FilterDescendantsInstances = {LocalPlayer.Character}
+            params.FilterType = Enum.RaycastFilterType.Blacklist
+            local result = Workspace:Raycast(destino, Vector3.new(0, -100, 0), params)
+            if result and result.Instance and result.Instance.CanCollide then
+                destino = result.Position + Vector3.new(0, ALTURA_EXTRA, 0)
+            end
+            hrp.CFrame = CFrame.new(destino)
+            StarterGui:SetCore("SendNotification", {
+                Title = "Teleporte Universal";
+                Text = "Teleportado para: "..obj.Name;
+                Duration = 3;
+            })
+            return
+        end
+    end
+    StarterGui:SetCore("SendNotification", {
+        Title = "Teleporte Universal";
+        Text = "Parte/Modelo não encontrado!";
+        Duration = 3;
+    })
+end
+
+-- Função de descer (Q)
+local function descer()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame + Vector3.new(0, -ALTURA_DESCIDA, 0)
     end
 end
 
+-- Controles: T para teleporte universal, Q para descer
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
-    if input.KeyCode == Enum.KeyCode.C then
-        teleportarParaOCeu()
-    elseif input.KeyCode == Enum.KeyCode.V then
-        teleportarParaZonaDeColeta()
+    if input.KeyCode == Enum.KeyCode.T then
+        promptNomeParteUniversal(function(nome)
+            teleportarParaNomeUniversal(nome)
+        end)
+    elseif input.KeyCode == Enum.KeyCode.Q then
+        descer()
     end
 end)
