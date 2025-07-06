@@ -8,14 +8,14 @@ local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 --[[ 
-    Base com segurança + pulo infinito + teleporte para o céu.
+    Base com segurança + pulo infinito + teleporte para o céu aprimorado:
     - Anti-AFK
     - Delay aleatório
     - Checagem segura
     - Simulação de input real
     - Interface protegida por F
     - Pulo infinito (barra de espaço)
-    - Teleporte para o céu (tecla C)
+    - Teleporte para o céu (tecla C, aprimorado)
 ]]
 
 -- Anti-AFK usando VirtualUser
@@ -88,13 +88,25 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- Teleporte para o céu ao apertar C
+-- Teleporte para o céu ao apertar C (aprimorado)
+local function teleportarParaOCeu()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = CFrame.new(
+            hrp.Position.X, 
+            1000, 
+            hrp.Position.Z, 
+            hrp.CFrame.LookVector.X, 0, hrp.CFrame.LookVector.Z, 
+            0, 1, 0, 
+            -hrp.CFrame.LookVector.Z, 0, hrp.CFrame.LookVector.X
+        )
+    end
+end
+
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.C then
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.CFrame = CFrame.new(char.HumanoidRootPart.Position.X, 1000, char.HumanoidRootPart.Position.Z)
-        end
+        teleportarParaOCeu()
     end
 end)
