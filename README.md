@@ -12,6 +12,7 @@ local ALTURA_CEU = 1000
 local ALTURA_DESCIDA = 5
 local CHECAR_CHAO = true
 local RADIUS_ROUBO = 15 -- Distância máxima para ativar prompt
+local HOLD_TIME = 20 -- Tempo em segundos para segurar o prompt
 
 -- Anti-AFK
 task.spawn(function()
@@ -45,7 +46,7 @@ local text = Instance.new("TextLabel")
 text.Size = UDim2.new(1, 0, 1, 0)
 text.BackgroundTransparency = 1
 text.TextColor3 = Color3.fromRGB(200,200,200)
-text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer com chão\n[V] Teleporte -50\n[E] Roubar próximo\n[F] Mostrar/Esconder painel"
+text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer com chão\n[V] Teleporte -50\n[E] Segurar Brainrot\n[F] Mostrar/Esconder painel"
 text.Font = Enum.Font.SourceSansBold
 text.TextSize = 16
 text.TextYAlignment = Enum.TextYAlignment.Top
@@ -135,8 +136,8 @@ local function teleportar50ParaBaixo()
     end
 end
 
--- Roubar com tecla E (ativa ProximityPrompt próximo)
-local function roubarProximo()
+-- Segura o ProximityPrompt por HOLD_TIME segundos (E)
+local function segurarBrainrot()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
@@ -145,11 +146,11 @@ local function roubarProximo()
         if v:IsA("ProximityPrompt") and v.Enabled and v.Parent and v.Parent:IsA("BasePart") then
             local dist = (v.Parent.Position - hrp.Position).Magnitude
             if dist <= RADIUS_ROUBO then
-                fireproximityprompt(v)
+                fireproximityprompt(v, HOLD_TIME, Enum.UserInputType.Keyboard)
                 StarterGui:SetCore("SendNotification", {
                     Title = "Roubo",
-                    Text = "Objeto roubado com sucesso!",
-                    Duration = 2
+                    Text = "Segurando o prompt por "..HOLD_TIME.." segundos...",
+                    Duration = 3
                 })
                 break
             end
@@ -167,6 +168,6 @@ UserInputService.InputBegan:Connect(function(input, gp)
     elseif input.KeyCode == Enum.KeyCode.V then
         teleportar50ParaBaixo()
     elseif input.KeyCode == Enum.KeyCode.E then
-        roubarProximo()
+        segurarBrainrot()
     end
 end)
