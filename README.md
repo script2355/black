@@ -8,8 +8,8 @@ local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local StarterGui = game:GetService("StarterGui")
 
-local ALTURA_CEU = 105 -- Altura para onde será teleportado ao apertar C
-local ALTURA_DESCIDA = 100 -- Quanto desce ao apertar Q
+local ALTURA_CEU = 1000 -- Altura para onde será teleportado ao apertar C
+local ALTURA_DESCIDA = 5 -- Quanto desce ao apertar Q
 local CHECAR_CHAO = true -- Se true, usa Raycast para encontrar chão
 
 --[[ 
@@ -21,7 +21,8 @@ local CHECAR_CHAO = true -- Se true, usa Raycast para encontrar chão
     - Interface protegida por F
     - Pulo infinito (barra de espaço)
     - Teleporte para o céu (C)
-    - Descer (Q)
+    - Descer com chão (Q)
+    - Teleportar 50 pra baixo (V)
 ]]
 
 -- ANTI-AFK
@@ -61,8 +62,8 @@ gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 gui.Enabled = false
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 270, 0, 120)
-frame.Position = UDim2.new(0.5, -135, 0.5, -60)
+frame.Size = UDim2.new(0, 270, 0, 140)
+frame.Position = UDim2.new(0.5, -135, 0.5, -70)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
 frame.BackgroundTransparency = 0.3
@@ -73,7 +74,7 @@ local text = Instance.new("TextLabel")
 text.Size = UDim2.new(1, 0, 1, 0)
 text.BackgroundTransparency = 1
 text.TextColor3 = Color3.fromRGB(200,200,200)
-text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer\n[F] Mostrar/Esconder este painel"
+text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte para o Céu\n[Q] Descer com chão\n[V] Teleporte -50\n[F] Mostrar/Esconder este painel"
 text.Font = Enum.Font.SourceSansBold
 text.TextSize = 16
 text.TextYAlignment = Enum.TextYAlignment.Top
@@ -115,14 +116,13 @@ local function teleportarParaOCeu()
     end
 end
 
--- ✅ Descer com Raycast e segurança (Q)
+-- Descer com Raycast e segurança (Q)
 local function descer()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if not hrp then return end
 
-    -- Ativar PlatformStand
     if hum then hum.PlatformStand = true end
 
     if CHECAR_CHAO then
@@ -140,13 +140,26 @@ local function descer()
         hrp.CFrame = hrp.CFrame + Vector3.new(0, -ALTURA_DESCIDA, 0)
     end
 
-    -- Desativar PlatformStand depois de 0.2s
     if hum then
         task.delay(0.2, function()
             if hum then
                 hum.PlatformStand = false
             end
         end)
+    end
+end
+
+-- ✅ Teleporte para baixo 50 (V)
+local function teleportar50ParaBaixo()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame + Vector3.new(0, -50, 0)
+        StarterGui:SetCore("SendNotification", {
+            Title = "Teleporte",
+            Text = "Desceu 50 unidades.",
+            Duration = 3
+        })
     end
 end
 
@@ -157,5 +170,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
         teleportarParaOCeu()
     elseif input.KeyCode == Enum.KeyCode.Q then
         descer()
+    elseif input.KeyCode == Enum.KeyCode.V then
+        teleportar50ParaBaixo()
     end
 end)
