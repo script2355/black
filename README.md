@@ -1,19 +1,20 @@
-local Players = game:GetService("Players")
+    local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- Criar GUI principal
+-- GUI principal
 local gui = Instance.new("ScreenGui")
 gui.Name = "BrainrotInterface"
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 gui.ResetOnSpawn = false
 gui.Enabled = true
 
--- Criar janela principal
+-- Janela principal
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 280, 0, 180)
-frame.Position = UDim2.new(0.5, -140, 0.5, -90)
+frame.Size = UDim2.new(0, 280, 0, 220)
+frame.Position = UDim2.new(0.5, -140, 0.5, -110)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
 frame.BackgroundTransparency = 0.15
@@ -23,8 +24,7 @@ frame.Parent = gui
 frame.ClipsDescendants = true
 
 -- Cantos arredondados
-local uicorner = Instance.new("UICorner", frame)
-uicorner.CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
 -- Título
 local title = Instance.new("TextLabel")
@@ -52,7 +52,7 @@ local function criarBotao(texto, ordem, callback)
     botao.MouseButton1Click:Connect(callback)
 end
 
--- Função: Roubar Brainrot (simula G)
+-- Funções
 local function roubarBrainrot()
     local prompt
     for _, obj in ipairs(workspace:GetDescendants()) do
@@ -66,7 +66,6 @@ local function roubarBrainrot()
     end
 end
 
--- Função: Teleporte para o céu
 local function teleportarCeu()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
@@ -74,17 +73,22 @@ local function teleportarCeu()
     end
 end
 
--- Função: Descer
 local function descer()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame - Vector3.new(0, 5, 0)
+    end
+end
+
+local function descer50()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame - Vector3.new(0, 50, 0)
     end
 end
 
--- Noclip toggle
+-- Noclip
 local noclip = false
-local RunService = game:GetService("RunService")
 RunService.Stepped:Connect(function()
     if noclip then
         local char = LocalPlayer.Character
@@ -94,13 +98,14 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Botões na interface
+-- Criar botões na interface
 criarBotao("🔓 Roubar Brainrot (G)", 1, roubarBrainrot)
 criarBotao("☁️ Teleporte para o Céu (C)", 2, teleportarCeu)
-criarBotao("⬇️ Descer (Q)", 3, descer)
-criarBotao("🚪 Toggle Noclip (N)", 4, function() noclip = not noclip end)
+criarBotao("⬇️ Descer 5 (Q)", 3, descer)
+criarBotao("⬇️ Descer 50 (V)", 4, descer50)
+criarBotao("🚪 Toggle Noclip (N)", 5, function() noclip = not noclip end)
 
--- Atalhos de teclado
+-- Teclas
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.F then
@@ -111,6 +116,8 @@ UserInputService.InputBegan:Connect(function(input, gp)
         teleportarCeu()
     elseif input.KeyCode == Enum.KeyCode.Q then
         descer()
+    elseif input.KeyCode == Enum.KeyCode.V then
+        descer50()
     elseif input.KeyCode == Enum.KeyCode.N then
         noclip = not noclip
     end
