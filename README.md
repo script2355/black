@@ -8,18 +8,13 @@ local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 --[[ 
-    Base com segurança + pulo infinito + teleporte para o céu + teleporte para zona de coleta da base:
-    - Anti-AFK
-    - Delay aleatório
-    - Checagem segura
-    - Simulação de input real
-    - Interface protegida por F
-    - Pulo infinito (barra de espaço)
-    - Teleporte para o céu (tecla C)
-    - Teleporte para zona de coleta (tecla V)
+    Segurança + pulo infinito + teleporte para o céu + teleporte para zona de coleta da base (com bypass de barreira):
+    - [Espaço] Pulo Infinito
+    - [C] Teleporte Céu
+    - [V] Teleporte para zona de coleta (chega por cima para evitar barreira)
+    - [F] Interface proteção
 ]]
 
--- == NOMES ACEITOS PARA A ZONA DE COLETA ==
 local ZONA_NOMES = {
     "ZonaDeColeta", "Zona de Coleta", "ZONA DE COLETA", "Coleta", "ColetaArea", "DropZone"
 }
@@ -37,24 +32,14 @@ task.spawn(function()
     end
 end)
 
--- Delay aleatório
 local function randomDelay(min, max)
     wait(min + math.random() * (max - min))
 end
 
--- Checagem segura de existência de objetos
 local function safeCheck(obj)
     return obj ~= nil and obj.Parent ~= nil
 end
 
--- Simulação de input real (exemplo: pulo)
-local function simulateJump()
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-    wait(0.13 + math.random() * 0.09)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-end
-
--- Interface protegida por F
 local gui = Instance.new("ScreenGui")
 gui.Name = "ProtegidoGUI_" .. HttpService:GenerateGUID(false):gsub("-", ""):sub(1, 8)
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
@@ -73,7 +58,7 @@ local text = Instance.new("TextLabel")
 text.Size = UDim2.new(1, 0, 1, 0)
 text.BackgroundTransparency = 1
 text.TextColor3 = Color3.fromRGB(200,200,200)
-text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte Céu\n[V] Zona de Coleta"
+text.Text = "Segurança Ativa\n[Espaço] Pulo Infinito\n[C] Teleporte Céu\n[V] Zona de Coleta (bypass barreira)"
 text.Font = Enum.Font.SourceSansBold
 text.TextSize = 16
 text.TextYAlignment = Enum.TextYAlignment.Top
@@ -110,7 +95,7 @@ local function teleportarParaOCeu()
     end
 end
 
--- Função para procurar a zona de coleta no workspace por vários nomes possíveis
+-- Procurar zona de coleta
 local function procurarZonaDeColeta()
     for _, nome in ipairs(ZONA_NOMES) do
         local zona = Workspace:FindFirstChild(nome)
@@ -120,7 +105,6 @@ local function procurarZonaDeColeta()
             return zona.PrimaryPart
         end
     end
-    -- Procura por Part com texto igual
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("BasePart") and obj.Name:lower():find("coleta") then
             return obj
@@ -129,7 +113,7 @@ local function procurarZonaDeColeta()
     return nil
 end
 
--- Teleporte direto para a zona de coleta ao apertar V
+-- Teleporte para zona de coleta por cima (bypass barreira)
 local function teleportarParaZonaDeColeta()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -137,6 +121,10 @@ local function teleportarParaZonaDeColeta()
 
     local zona = procurarZonaDeColeta()
     if zona then
+        -- Primeiro teleporta bem acima (Y+20)
+        hrp.CFrame = CFrame.new(zona.Position + Vector3.new(0, 20, 0))
+        wait(0.5)
+        -- Depois desce para a posição certa (Y+4)
         hrp.CFrame = CFrame.new(zona.Position + Vector3.new(0, 4, 0))
     end
 end
