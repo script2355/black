@@ -146,10 +146,18 @@ local function segurarBrainrot()
         if v:IsA("ProximityPrompt") and v.Enabled and v.Parent and v.Parent:IsA("BasePart") then
             local dist = (v.Parent.Position - hrp.Position).Magnitude
             if dist <= RADIUS_ROUBO then
-                fireproximityprompt(v, HOLD_TIME, Enum.UserInputType.Keyboard)
                 StarterGui:SetCore("SendNotification", {
                     Title = "Roubo",
-                    Text = "Segurando prompt por "..HOLD_TIME.." segundos.",
+                    Text = "Iniciando roubo (segurando prompt)...",
+                    Duration = 3
+                })
+
+                fireproximityprompt(v, HOLD_TIME, Enum.UserInputType.Keyboard)
+                wait(HOLD_TIME)
+
+                StarterGui:SetCore("SendNotification", {
+                    Title = "Roubo",
+                    Text = "Roubo concluído (prompt segurado).",
                     Duration = 3
                 })
                 break
@@ -168,7 +176,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
     elseif input.KeyCode == Enum.KeyCode.V then
         teleportar50ParaBaixo()
     elseif input.KeyCode == Enum.KeyCode.F then
-        segurarBrainrot()
+        task.spawn(segurarBrainrot)
     elseif input.KeyCode == Enum.KeyCode.G then
         gui.Enabled = not gui.Enabled
     end
