@@ -9,7 +9,8 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local StarterGui = game:GetService("StarterGui")
 
 local ALTURA_CEU = 1000 -- Altura para onde será teleportado ao apertar C
-local ALTURA_DESCIDA = 5 -- Quanto desce ao apertar Q
+local ALTURA_DESCIDA = 10 -- Quanto desce ao apertar Q
+local CHECAR_CHAO = true -- Se true, usa Raycast para encontrar chão
 
 --[[ 
     Base com segurança + pulo infinito + teleporte para o céu:
@@ -114,12 +115,38 @@ local function teleportarParaOCeu()
     end
 end
 
--- Função para descer (Q)
+-- ✅ Descer com Raycast e segurança (Q)
 local function descer()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp then return end
+
+    -- Ativar PlatformStand
+    if hum then hum.PlatformStand = true end
+
+    if CHECAR_CHAO then
+        local params = RaycastParams.new()
+        params.FilterDescendantsInstances = {char}
+        params.FilterType = Enum.RaycastFilterType.Blacklist
+        local result = Workspace:Raycast(hrp.Position, Vector3.new(0, -100, 0), params)
+
+        if result and result.Instance and result.Instance.CanCollide then
+            hrp.CFrame = CFrame.new(result.Position + Vector3.new(0, 3, 0))
+        else
+            hrp.CFrame = hrp.CFrame + Vector3.new(0, -ALTURA_DESCIDA, 0)
+        end
+    else
         hrp.CFrame = hrp.CFrame + Vector3.new(0, -ALTURA_DESCIDA, 0)
+    end
+
+    -- Desativar PlatformStand depois de 0.2s
+    if hum then
+        task.delay(0.2, function()
+            if hum then
+                hum.PlatformStand = false
+            end
+        end)
     end
 end
 
