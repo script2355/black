@@ -141,33 +141,33 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- Segurar ProximityPrompt (Roubar Brainrot)
+-- Roubar Brainrot com fireproximityprompt
 local function segurarPrompt()
     local prompt = nil
     local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
 
     for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") and v.Enabled and (v.Parent.Position - char.HumanoidRootPart.Position).Magnitude < 10 then
-            prompt = v
-            break
+        if v:IsA("ProximityPrompt") and v.Enabled then
+            local distance = (v.Parent.Position - char.HumanoidRootPart.Position).Magnitude
+            if distance < 12 then
+                prompt = v
+                break
+            end
         end
     end
 
     if prompt then
-        VirtualInputManager:SendKeyEvent(true, prompt.KeyboardKeyCode, false, game)
-        wait(0.5) -- tempo segurando
-        VirtualInputManager:SendKeyEvent(false, prompt.KeyboardKeyCode, false, game)
-
+        fireproximityprompt(prompt, 1) -- segura por 1 segundo
         StarterGui:SetCore("SendNotification", {
-            Title = "Roubo",
-            Text = "Tentando roubar o Brainrot...",
+            Title = "Brainrot",
+            Text = "Segurando para roubar...",
             Duration = 2
         })
     else
         StarterGui:SetCore("SendNotification", {
             Title = "Erro",
-            Text = "Nenhum Brainrot por perto!",
+            Text = "Nenhum Brainrot próximo!",
             Duration = 2
         })
     end
