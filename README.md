@@ -1,5 +1,4 @@
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
@@ -14,8 +13,8 @@ gui.Enabled = true
 
 -- Janela principal
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 280, 0, 260)
-frame.Position = UDim2.new(0.5, -140, 0.5, -130)
+frame.Size = UDim2.new(0, 280, 0, 300) -- maior altura para bases
+frame.Position = UDim2.new(0.5, -140, 0.5, -150)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
 frame.BackgroundTransparency = 0.15
@@ -36,7 +35,7 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 20
 title.Parent = frame
 
--- Criar botão
+-- Função para criar botões
 local ordem = 0
 local function criarBotao(texto, callback)
 	ordem += 1
@@ -55,7 +54,7 @@ local function criarBotao(texto, callback)
 	return botao
 end
 
--- Funções de movimentação
+-- Funções básicas de movimentação
 local function teleportarCeu()
 	local char = LocalPlayer.Character
 	if char and char:FindFirstChild("HumanoidRootPart") then
@@ -90,46 +89,17 @@ UserInputService.InputBegan:Connect(function(input, isTyping)
 	end
 end)
 
--- Criar botões
+-- Botões
 criarBotao("☁️ Teleporte para o Céu (C)", teleportarCeu)
 criarBotao("⬇️ Descer 5 (Q)", descer)
 criarBotao("⬇️ Descer 50 (V)", descer50)
 
--- Botão pulo infinito
 local puloBotao = criarBotao("🦘 Pulo Infinito: OFF", function()
 	infiniteJumpEnabled = not infiniteJumpEnabled
 	puloBotao.Text = infiniteJumpEnabled and "🦘 Pulo Infinito: ON" or "🦘 Pulo Infinito: OFF"
 end)
 
--- Temporizador base
-local timerLabel = Instance.new("TextLabel")
-timerLabel.Size = UDim2.new(0.9, 0, 0, 30)
-timerLabel.Position = UDim2.new(0.05, 0, 1, -35)
-timerLabel.BackgroundTransparency = 1
-timerLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-timerLabel.Font = Enum.Font.GothamBold
-timerLabel.TextSize = 18
-timerLabel.Text = "⌛ Tempo restante: carregando..."
-timerLabel.Parent = frame
-
-local tempoTotal = 300
-local tempoRestante = tempoTotal
-
-task.spawn(function()
-	while true do
-		if tempoRestante <= 0 then
-			timerLabel.Text = "✅ Bases abertas!"
-			wait(5)
-			tempoRestante = tempoTotal
-		else
-			timerLabel.Text = "⌛ Tempo restante: " .. tostring(tempoRestante) .. "s"
-			tempoRestante -= 1
-		end
-		wait(1)
-	end
-end)
-
--- ESP jogadores
+-- ESP para jogadores
 local function criarESP(jogador)
 	if jogador == LocalPlayer then return end
 	local function adicionar()
@@ -163,13 +133,72 @@ local function criarESP(jogador)
 	end)
 end
 
--- ESP inicial + novos jogadores
 for _, jogador in pairs(Players:GetPlayers()) do
 	criarESP(jogador)
 end
 Players.PlayerAdded:Connect(criarESP)
 
--- Teclas atalho
+-- Detectar bases e mostrar tempo para abrir
+local baseTimes = {} -- tabela que armazena tempo restante por base
+local baseLabels = {} -- TextLabels para cada base
+
+-- Detecta as bases no workspace que tenham 'base' no nome (case-insensitive)
+local function detectarBases()
+	baseTimes = {}
+	baseLabels = {}
+	
+	-- Limpar labels antigos
+	for _, lbl in pairs(frame:GetChildren()) do
+		if lbl.Name and lbl.Name:match("^BaseTimerLabel_") then
+			lbl:Destroy()
+		end
+	end
+	
+	local bases = {}
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if string.find(string.lower(obj.Name), "base") then
+			table.insert(bases, obj)
+		end
+	end
+	
+	for i, base in ipairs(bases) do
+		baseTimes[base] = 60 + math.random(0, 60) -- Simulando tempo entre 60 e 120 segundos
+		local label = Instance.new("TextLabel")
+		label.Name = "BaseTimerLabel_"..i
+		label.Size = UDim2.new(0.9, 0, 0, 20)
+		label.Position = UDim2.new(0.05, 0, 0, 35 + ordem*38 + (i-1)*22)
+		label.BackgroundTransparency = 1
+		label.TextColor3 = Color3.fromRGB(255, 255, 0)
+		label.Font = Enum.Font.Gotham
+		label.TextSize = 14
+		label.Text = base.Name .. ": " .. baseTimes[base] .. "s"
+		label.Parent = frame
+		baseLabels[base] = label
+	end
+end
+
+detectarBases()
+
+-- Atualiza o contador das bases a cada segundo
+task.spawn(function()
+	while true do
+		for base, tempo in pairs(baseTimes) do
+			if tempo > 0 then
+				baseTimes[base] = tempo - 1
+				if baseLabels[base] then
+					baseLabels[base].Text = base.Name .. ": " .. baseTimes[base] .. "s"
+				end
+			else
+				if baseLabels[base] then
+					baseLabels[base].Text = base.Name .. ": ✅ Aberta!"
+				end
+			end
+		end
+		wait(1)
+	end
+end)
+
+-- Teclas atalho para interface e funções
 UserInputService.InputBegan:Connect(function(input, gp)
 	if gp then return end
 	if input.KeyCode == Enum.KeyCode.F then
