@@ -1,4 +1,4 @@
--- Brainrot Hub PRO - Script Completo e Funcional
+-- Brainrot Hub PRO para Roube um Brainrot (Executor Edition)
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -8,85 +8,72 @@ local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
 
--- Espera o personagem carregar
-repeat task.wait() until LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-local character = LocalPlayer.Character
-
--- Configurações iniciais
-local config = {
+-- Config global (para fácil alteração no executor)
+getgenv().BRConfig = getgenv().BRConfig or {
     autoFarm = false,
     infiniteJump = false,
     noclip = false,
     fly = false,
     flySpeed = 2,
     walkSpeed = 24,
-    antiAFK = true,
-    chams = true,
 }
 
--- Anti AFK simples
-if config.antiAFK then
-    for _,v in pairs(getconnections(LocalPlayer.Idled)) do
-        v:Disable()
-    end
-    LocalPlayer.Idled:Connect(function()
-        VirtualUser:Button2Down(Vector2.new())
-        task.wait(1)
-        VirtualUser:Button2Up(Vector2.new())
-    end)
-end
+local config = getgenv().BRConfig
 
--- Cria GUI
+-- Espera o personagem carregar
+repeat task.wait() until LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+local character = LocalPlayer.Character
+
+-- Anti AFK (evita kick por inatividade)
+for _, conn in pairs(getconnections(LocalPlayer.Idled)) do
+    conn:Disable()
+end
+LocalPlayer.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new())
+    task.wait(1)
+    VirtualUser:Button2Up(Vector2.new())
+end)
+
+-- GUI
 local gui = Instance.new("ScreenGui")
 gui.Name = "BrainrotHubPRO"
-gui.ResetOnSpawn = false
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 320, 0, 500)
-frame.Position = UDim2.new(0.5, -160, 0.5, -250)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-frame.BackgroundTransparency = 0.1
+frame.Size = UDim2.new(0, 320, 0, 480)
+frame.Position = UDim2.new(0.5, -160, 0.5, -240)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "🧠 Brainrot Hub PRO"
+title.BackgroundTransparency = 1
 title.TextColor3 = Color3.new(1,1,1)
+title.Text = "🧠 Brainrot Hub PRO - Roube um Brainrot"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
-title.BackgroundTransparency = 1
 title.Parent = frame
 
--- Função para criar botões
 local ordem = 0
 local function criarBotao(texto, func)
     ordem += 1
     local botao = Instance.new("TextButton")
     botao.Size = UDim2.new(0.9, 0, 0, 30)
-    botao.Position = UDim2.new(0.05, 0, 0, 35 + (ordem - 1) * 35)
-    botao.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    botao.TextColor3 = Color3.new(1, 1, 1)
+    botao.Position = UDim2.new(0.05, 0, 0, 35 + (ordem-1)*35)
+    botao.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    botao.TextColor3 = Color3.new(1,1,1)
     botao.Text = texto
     botao.Font = Enum.Font.Gotham
     botao.TextSize = 14
-    botao.AutoButtonColor = false
+    botao.AutoButtonColor = true
     botao.Parent = frame
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
+    corner.CornerRadius = UDim.new(0,6)
     corner.Parent = botao
-
-    local function animateHover(enter)
-        local goalColor = enter and Color3.fromRGB(70, 70, 70) or Color3.fromRGB(40, 40, 40)
-        TweenService:Create(botao, TweenInfo.new(0.2), {BackgroundColor3 = goalColor}):Play()
-    end
-
-    botao.MouseEnter:Connect(function() animateHover(true) end)
-    botao.MouseLeave:Connect(function() animateHover(false) end)
 
     local sound = Instance.new("Sound", botao)
     sound.SoundId = "rbxassetid://12221967"
@@ -96,9 +83,17 @@ local function criarBotao(texto, func)
         sound:Play()
         func()
     end)
+
+    local function hoverAnim(enter)
+        local corMeta = enter and Color3.fromRGB(80,80,80) or Color3.fromRGB(50,50,50)
+        TweenService:Create(botao, TweenInfo.new(0.2), {BackgroundColor3 = corMeta}):Play()
+    end
+
+    botao.MouseEnter:Connect(function() hoverAnim(true) end)
+    botao.MouseLeave:Connect(function() hoverAnim(false) end)
 end
 
--- Função teleporte para posição
+-- Função para teleporte para posição
 local function teleportarPara(pos)
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
@@ -106,7 +101,18 @@ local function teleportarPara(pos)
     end
 end
 
--- Função fly
+-- Função para roubar brainrot (autoFarm)
+local function roubarBrainrot()
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent:IsA("Model") then
+            pcall(function()
+                fireproximityprompt(obj)
+            end)
+        end
+    end
+end
+
+-- Fly
 local flyVelocity = Instance.new("BodyVelocity")
 local flying = false
 local function toggleFly()
@@ -154,17 +160,11 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Auto Farm
+-- Auto Farm loop
 task.spawn(function()
     while task.wait(1.5) do
         if config.autoFarm then
-            for _, obj in pairs(Workspace:GetDescendants()) do
-                if obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent:IsA("Model") then
-                    pcall(function()
-                        fireproximityprompt(obj)
-                    end)
-                end
-            end
+            roubarBrainrot()
         end
     end
 end)
@@ -196,7 +196,8 @@ end
 for _,p in pairs(Players:GetPlayers()) do criarESP(p) end
 Players.PlayerAdded:Connect(criarESP)
 
--- Criar botões da interface
+-- Criar botões GUI
+
 criarBotao("🧠 Auto Farm", function()
     config.autoFarm = not config.autoFarm
 end)
@@ -223,29 +224,21 @@ criarBotao("🔄 Resetar Personagem", function()
     LocalPlayer:LoadCharacter()
 end)
 
-criarBotao("📦 Teleporte Base 1", function()
-    teleportarPara(Vector3.new(0, 10, 0)) -- Substitua pela posição correta
-end)
-
-criarBotao("📦 Teleporte Base 2", function()
-    teleportarPara(Vector3.new(100, 10, 0)) -- Substitua pela posição correta
-end)
-
-criarBotao("📦 Teleporte para o Céu", function()
+criarBotao("📦 Teleporte para o Céu (C)", function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + Vector3.new(0, 1000, 0)
+        char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + Vector3.new(0, 106, 0)
     end
 end)
 
-criarBotao("⬇️ Descer 100", function()
+criarBotao("⬇️ Teleporte para Baixo (V)", function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame - Vector3.new(0, 100, 0)
     end
 end)
 
--- Controle de teclas rápidas
+-- Teclas rápidas
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
 
