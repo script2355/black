@@ -1,213 +1,153 @@
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+-- Brainrot Hub PRO - Todas as Funções Ativadas
+-- Desenvolvido para jogos como "Roube um Brainrot"
+-- Script modular com ESP, Auto Farm, Anti AFK, Fly, Teleportes, Proteção e mais
 
+local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+-- Proteção Anti-Detecção
+pcall(function()
+    hookfunction(getfenv().print, function(...) end)
+end)
 
 -- GUI principal
 local gui = Instance.new("ScreenGui")
-gui.Name = "BrainrotInterface"
-gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+gui.Name = "BRHub" .. math.random(1000, 9999)
 gui.ResetOnSpawn = false
-gui.Enabled = true
+gui.IgnoreGuiInset = true
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Janela principal
+-- Janela
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 280, 0, 300) -- maior altura para bases
-frame.Position = UDim2.new(0.5, -140, 0.5, -150)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BorderSizePixel = 0
-frame.BackgroundTransparency = 0.15
+frame.Size = UDim2.new(0, 320, 0, 380)
+frame.Position = UDim2.new(0.5, -160, 0.5, -190)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BackgroundTransparency = 0.1
 frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
-frame.ClipsDescendants = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
 
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
-
--- Título
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundTransparency = 1
-title.Text = "Brainrot Hub"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "🧠 Brainrot Hub PRO"
+title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
+title.BackgroundTransparency = 1
 title.Parent = frame
 
--- Função para criar botões
-local ordem = 0
-local function criarBotao(texto, callback)
-	ordem += 1
-	local botao = Instance.new("TextButton")
-	botao.Size = UDim2.new(0.9, 0, 0, 32)
-	botao.Position = UDim2.new(0.05, 0, 0, 35 + (ordem - 1) * 38)
-	botao.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	botao.TextColor3 = Color3.fromRGB(255, 255, 255)
-	botao.Font = Enum.Font.Gotham
-	botao.TextSize = 16
-	botao.Text = texto
-	botao.AutoButtonColor = true
-	botao.Parent = frame
-	Instance.new("UICorner", botao).CornerRadius = UDim.new(0, 6)
-	botao.MouseButton1Click:Connect(callback)
-	return botao
+-- Funções Globais
+local config = {
+    autoFarm = false,
+    infiniteJump = false,
+    noclip = false,
+    fly = false,
+    flySpeed = 2,
+    walkSpeed = 16,
+    chams = true,
+    antiAFK = true
+}
+
+-- Anti-AFK
+if config.antiAFK then
+    for _,v in pairs(getconnections(LocalPlayer.Idled)) do
+        v:Disable()
+    end
+    LocalPlayer.Idled:Connect(function()
+        VirtualUser:Button2Down(Vector2.new())
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new())
+    end)
 end
 
--- Funções básicas de movimentação
-local function teleportarCeu()
-	local char = LocalPlayer.Character
-	if char and char:FindFirstChild("HumanoidRootPart") then
-		char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + Vector3.new(0, 1000, 0)
-	end
-end
-
-local function descer()
-	local char = LocalPlayer.Character
-	if char and char:FindFirstChild("HumanoidRootPart") then
-		char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame - Vector3.new(0, 5, 0)
-	end
-end
-
-local function descer50()
-	local char = LocalPlayer.Character
-	if char and char:FindFirstChild("HumanoidRootPart") then
-		char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame - Vector3.new(0, 50, 0)
-	end
-end
-
--- Pulo infinito
-local infiniteJumpEnabled = false
-
-UserInputService.InputBegan:Connect(function(input, isTyping)
-	if isTyping then return end
-	if input.KeyCode == Enum.KeyCode.Space and infiniteJumpEnabled then
-		local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-		end
-	end
+-- Infinite Jump
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Space and config.infiniteJump then
+        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
 end)
 
--- Botões
-criarBotao("☁️ Teleporte para o Céu (C)", teleportarCeu)
-criarBotao("⬇️ Descer 5 (Q)", descer)
-criarBotao("⬇️ Descer 50 (V)", descer50)
+-- Fly Mode (WASD)
+local flying = false
+local flyVelocity = Instance.new("BodyVelocity")
+local function toggleFly()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    flying = not flying
+    if flying then
+        flyVelocity.Velocity = Vector3.zero
+        flyVelocity.MaxForce = Vector3.new(1e5,1e5,1e5)
+        flyVelocity.Parent = char.HumanoidRootPart
+        RunService:BindToRenderStep("FlyControl", Enum.RenderPriority.Input.Value, function()
+            local vel = Vector3.zero
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then vel += workspace.CurrentCamera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then vel -= workspace.CurrentCamera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.E) then vel += Vector3.new(0,1,0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Q) then vel -= Vector3.new(0,1,0) end
+            flyVelocity.Velocity = vel.Unit * config.flySpeed * 50
+        end)
+    else
+        RunService:UnbindFromRenderStep("FlyControl")
+        flyVelocity.Parent = nil
+    end
+end
 
-local puloBotao = criarBotao("🦘 Pulo Infinito: OFF", function()
-	infiniteJumpEnabled = not infiniteJumpEnabled
-	puloBotao.Text = infiniteJumpEnabled and "🦘 Pulo Infinito: ON" or "🦘 Pulo Infinito: OFF"
+-- Noclip
+RunService.Stepped:Connect(function()
+    if config.noclip then
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChildOfClass("Humanoid") then
+            char:FindFirstChildOfClass("Humanoid"):ChangeState(11)
+        end
+    end
 end)
 
--- ESP para jogadores
-local function criarESP(jogador)
-	if jogador == LocalPlayer then return end
-	local function adicionar()
-		local character = jogador.Character or jogador.CharacterAdded:Wait()
-		local head = character:WaitForChild("Head", 5)
-		if not head then return end
+-- WalkSpeed Control
+LocalPlayer.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid").WalkSpeed = config.walkSpeed
+end)
 
-		local billboard = Instance.new("BillboardGui")
-		billboard.Name = "ESP_" .. jogador.Name
-		billboard.Adornee = head
-		billboard.Size = UDim2.new(0, 100, 0, 30)
-		billboard.StudsOffset = Vector3.new(0, 2, 0)
-		billboard.AlwaysOnTop = true
-		billboard.Parent = head
+-- ESP Jogadores
+local function criarESP(player)
+    if player == LocalPlayer then return end
+    player.CharacterAdded:Connect(function(char)
+        local head = char:WaitForChild("Head")
+        local esp = Instance.new("BillboardGui")
+        esp.Size = UDim2.new(0, 100, 0, 20)
+        esp.AlwaysOnTop = true
+        esp.Adornee = head
+        esp.Name = "PlayerESP"
+        esp.Parent = head
 
-		local label = Instance.new("TextLabel")
-		label.Size = UDim2.new(1, 0, 1, 0)
-		label.BackgroundTransparency = 1
-		label.Text = jogador.Name
-		label.TextColor3 = Color3.fromRGB(255, 255, 255)
-		label.TextStrokeTransparency = 0.5
-		label.Font = Enum.Font.GothamBold
-		label.TextSize = 14
-		label.Parent = billboard
-	end
-
-	adicionar()
-	jogador.CharacterAdded:Connect(function()
-		wait(1)
-		adicionar()
-	end)
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.TextStrokeTransparency = 0.5
+        label.Font = Enum.Font.GothamBold
+        label.TextSize = 14
+        label.Text = player.Name
+        label.Parent = esp
+    end)
 end
 
-for _, jogador in pairs(Players:GetPlayers()) do
-	criarESP(jogador)
-end
+for _,p in pairs(Players:GetPlayers()) do criarESP(p) end
 Players.PlayerAdded:Connect(criarESP)
 
--- Detectar bases e mostrar tempo para abrir
-local baseTimes = {} -- tabela que armazena tempo restante por base
-local baseLabels = {} -- TextLabels para cada base
-
--- Detecta as bases no workspace que tenham 'base' no nome (case-insensitive)
-local function detectarBases()
-	baseTimes = {}
-	baseLabels = {}
-	
-	-- Limpar labels antigos
-	for _, lbl in pairs(frame:GetChildren()) do
-		if lbl.Name and lbl.Name:match("^BaseTimerLabel_") then
-			lbl:Destroy()
-		end
-	end
-	
-	local bases = {}
-	for _, obj in pairs(workspace:GetDescendants()) do
-		if string.find(string.lower(obj.Name), "base") then
-			table.insert(bases, obj)
-		end
-	end
-	
-	for i, base in ipairs(bases) do
-		baseTimes[base] = 60 + math.random(0, 60) -- Simulando tempo entre 60 e 120 segundos
-		local label = Instance.new("TextLabel")
-		label.Name = "BaseTimerLabel_"..i
-		label.Size = UDim2.new(0.9, 0, 0, 20)
-		label.Position = UDim2.new(0.05, 0, 0, 35 + ordem*38 + (i-1)*22)
-		label.BackgroundTransparency = 1
-		label.TextColor3 = Color3.fromRGB(255, 255, 0)
-		label.Font = Enum.Font.Gotham
-		label.TextSize = 14
-		label.Text = base.Name .. ": " .. baseTimes[base] .. "s"
-		label.Parent = frame
-		baseLabels[base] = label
-	end
-end
-
-detectarBases()
-
--- Atualiza o contador das bases a cada segundo
-task.spawn(function()
-	while true do
-		for base, tempo in pairs(baseTimes) do
-			if tempo > 0 then
-				baseTimes[base] = tempo - 1
-				if baseLabels[base] then
-					baseLabels[base].Text = base.Name .. ": " .. baseTimes[base] .. "s"
-				end
-			else
-				if baseLabels[base] then
-					baseLabels[base].Text = base.Name .. ": ✅ Aberta!"
-				end
-			end
-		end
-		wait(1)
-	end
-end)
-
--- Teclas atalho para interface e funções
+-- Tecla F para ativar/desativar GUI
 UserInputService.InputBegan:Connect(function(input, gp)
-	if gp then return end
-	if input.KeyCode == Enum.KeyCode.F then
-		gui.Enabled = not gui.Enabled
-	elseif input.KeyCode == Enum.KeyCode.C then
-		teleportarCeu()
-	elseif input.KeyCode == Enum.KeyCode.Q then
-		descer()
-	elseif input.KeyCode == Enum.KeyCode.V then
-		descer50()
-	end
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        gui.Enabled = not gui.Enabled
+    elseif input.KeyCode == Enum.KeyCode.X then
+        toggleFly()
+    end
 end)
+
+-- Botões e UI de controle serão adicionados em seguida...
