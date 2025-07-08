@@ -124,6 +124,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
         local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if root then
             root.CFrame = root.CFrame + Vector3.new(0, 1000, 0)
+            print("🔼 Teleporte para cima (1000) ativado com sucesso!")
         end
     end
 end)
