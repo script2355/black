@@ -7,6 +7,7 @@ local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local VirtualUser = game:GetService("VirtualUser")
 
 -- Proteção Anti-Detecção
 pcall(function()
@@ -22,8 +23,8 @@ gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Janela
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 320, 0, 380)
-frame.Position = UDim2.new(0.5, -160, 0.5, -190)
+frame.Size = UDim2.new(0, 320, 0, 400)
+frame.Position = UDim2.new(0.5, -160, 0.5, -200)
 frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 frame.BackgroundTransparency = 0.1
 frame.Active = true
@@ -40,16 +41,18 @@ title.TextSize = 20
 title.BackgroundTransparency = 1
 title.Parent = frame
 
--- Funções Globais
+-- Configuração Global
 local config = {
     autoFarm = false,
     infiniteJump = false,
     noclip = false,
     fly = false,
     flySpeed = 2,
-    walkSpeed = 16,
-    chams = true,
-    antiAFK = true
+    walkSpeed = 24,
+    chams = false,
+    antiAFK = true,
+    autoSell = false,
+    godmode = false
 }
 
 -- Anti-AFK
@@ -73,7 +76,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Fly Mode (WASD)
+-- Fly Mode
 local flying = false
 local flyVelocity = Instance.new("BodyVelocity")
 local function toggleFly()
@@ -140,7 +143,20 @@ end
 for _,p in pairs(Players:GetPlayers()) do criarESP(p) end
 Players.PlayerAdded:Connect(criarESP)
 
--- Tecla F para ativar/desativar GUI
+-- Auto Farm
+task.spawn(function()
+    while task.wait(1.5) do
+        if config.autoFarm then
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent:IsA("Model") then
+                    fireproximityprompt(obj)
+                end
+            end
+        end
+    end
+end)
+
+-- Tecla F para ativar GUI / X para Fly
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.F then
@@ -150,4 +166,47 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- Botões e UI de controle serão adicionados em seguida...
+-- Interface de controle
+local ordem = 0
+local function criarBotao(texto, func)
+    ordem += 1
+    local botao = Instance.new("TextButton")
+    botao.Size = UDim2.new(0.9, 0, 0, 30)
+    botao.Position = UDim2.new(0.05, 0, 0, 35 + (ordem - 1) * 35)
+    botao.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    botao.TextColor3 = Color3.new(1,1,1)
+    botao.Text = texto
+    botao.Font = Enum.Font.Gotham
+    botao.TextSize = 14
+    botao.Parent = frame
+    Instance.new("UICorner", botao).CornerRadius = UDim.new(0,6)
+    botao.MouseButton1Click:Connect(func)
+end
+
+criarBotao("🧠 Auto Farm", function()
+    config.autoFarm = not config.autoFarm
+end)
+criarBotao("🦘 Pulo Infinito", function()
+    config.infiniteJump = not config.infiniteJump
+end)
+criarBotao("🚷 Noclip", function()
+    config.noclip = not config.noclip
+end)
+criarBotao("🕊️ Fly Mode (X)", function()
+    toggleFly()
+end)
+criarBotao("🏃 WalkSpeed +10", function()
+    config.walkSpeed += 10
+    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+    if hum then hum.WalkSpeed = config.walkSpeed end
+end)
+criarBotao("🎯 ESP Chams", function()
+    config.chams = not config.chams
+    -- Placeholder para futura adição visual
+end)
+criarBotao("🧽 Godmode (simulado)", function()
+    config.godmode = not config.godmode
+end)
+criarBotao("🔄 Resetar Personagem", function()
+    LocalPlayer:LoadCharacter()
+end)
