@@ -123,7 +123,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
     if input.KeyCode == Enum.KeyCode.C then
         local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if root then
-            root.CFrame = root.CFrame + Vector3.new(0, 100, 0)
+            root.CFrame = root.CFrame + Vector3.new(0, 1000, 0)
         end
     end
 end)
