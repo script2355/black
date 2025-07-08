@@ -90,10 +90,7 @@ RunService.RenderStepped:Connect(function()
     if config.noclip and char and char:FindFirstChildOfClass("Humanoid") then
         char:FindFirstChildOfClass("Humanoid"):ChangeState(11)
     end
-    if config.teleport and hrp then
-        hrp.CFrame = hrp.CFrame + Vector3.new(0, 100, 0)
-    end
-    if config.speedBoost and hrp then
+        if config.speedBoost and hrp then
         hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 2
     end
     if config.floatToBase and hrp then
@@ -118,10 +115,16 @@ UserInputService.InputBegan:Connect(function(input, gp)
         config.speedBoost = not config.speedBoost
     end
     if input.KeyCode == Enum.KeyCode.V then
-        config.floatToBase = not config.floatToBase
+        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = root.CFrame - Vector3.new(0, 100, 0)
+        end
     end
-    if input.KeyCode == Enum.KeyCode.F then
-        config.teleport = not config.teleport
+    if input.KeyCode == Enum.KeyCode.C then
+        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = root.CFrame + Vector3.new(0, 100, 0)
+        end
     end
 end)
 
@@ -168,7 +171,7 @@ end
 criarBotao("✅ Auto Farm", 1, "autoFarm")
 criarBotao("🌀 Infinite Jump", 2, "infiniteJump")
 criarBotao("🚪 Noclip", 3, "noclip")
-criarBotao("🛸 Teleport (F)", 4, "teleport")
+criarBotao("🛸 Teleport (C)", 4, "teleport")
 criarBotao("🔊 Alerta Proximidade", 5, "alertaProximidade")
 criarBotao("👁️ ESP Jogadores", 6, "espPlayers")
 criarBotao("💨 Boost Velocidade (Q)", 7, "speedBoost")
