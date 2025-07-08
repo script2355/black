@@ -1,4 +1,4 @@
--- Brainrot Hub PRO para Roube um Brainrot (Executor Edition)
+-- Brainrot Hub PRO para Roube um Brainrot (Executor Edition Completo)
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -8,14 +8,14 @@ local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
 
--- Config global (para fácil alteração no executor)
+-- Config global
 getgenv().BRConfig = getgenv().BRConfig or {
     autoFarm = false,
     infiniteJump = false,
     noclip = false,
     fly = false,
     flySpeed = 2,
-    walkSpeed = 24,
+    walkSpeed = 20, -- velocidade base inicial 20
 }
 
 local config = getgenv().BRConfig
@@ -24,7 +24,7 @@ local config = getgenv().BRConfig
 repeat task.wait() until LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 local character = LocalPlayer.Character
 
--- Anti AFK (evita kick por inatividade)
+-- Anti AFK
 for _, conn in pairs(getconnections(LocalPlayer.Idled)) do
     conn:Disable()
 end
@@ -196,7 +196,23 @@ end
 for _,p in pairs(Players:GetPlayers()) do criarESP(p) end
 Players.PlayerAdded:Connect(criarESP)
 
--- Criar botões GUI
+-- Variáveis para walkSpeed e boost
+local walkSpeedNormal = config.walkSpeed or 20
+local walkSpeedBoost = 60
+local boosting = false
+
+-- Atualiza a velocidade do personagem
+local function atualizarWalkSpeed()
+    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+    if hum then
+        hum.WalkSpeed = boosting and walkSpeedBoost or walkSpeedNormal
+    end
+end
+
+-- Aplica velocidade inicial
+atualizarWalkSpeed()
+
+-- Botões GUI
 
 criarBotao("🧠 Auto Farm", function()
     config.autoFarm = not config.autoFarm
@@ -214,10 +230,15 @@ criarBotao("🕊️ Fly Mode (X)", function()
     toggleFly()
 end)
 
-criarBotao("🏃 WalkSpeed +10", function()
-    config.walkSpeed += 10
-    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
-    if hum then hum.WalkSpeed = config.walkSpeed end
+criarBotao("🏃‍♂️ WalkSpeed +10", function()
+    walkSpeedNormal += 10
+    atualizarWalkSpeed()
+end)
+
+criarBotao("🔄 Resetar Velocidade", function()
+    walkSpeedNormal = 20
+    boosting = false
+    atualizarWalkSpeed()
 end)
 
 criarBotao("🔄 Resetar Personagem", function()
@@ -227,7 +248,7 @@ end)
 criarBotao("📦 Teleporte para o Céu (C)", function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + Vector3.new(0, 106, 0)
+        char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + Vector3.new(0, 1000, 0)
     end
 end)
 
@@ -239,6 +260,7 @@ criarBotao("⬇️ Teleporte para Baixo (V)", function()
 end)
 
 -- Teclas rápidas
+
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
 
@@ -262,11 +284,21 @@ UserInputService.InputBegan:Connect(function(input, gp)
         end
     elseif input.KeyCode == Enum.KeyCode.N then
         config.noclip = not config.noclip
+    elseif input.KeyCode == Enum.KeyCode.Q then
+        boosting = true
+        atualizarWalkSpeed()
     elseif input.KeyCode == Enum.KeyCode.L then
-        config.walkSpeed += 10
-        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
-        if hum then hum.WalkSpeed = config.walkSpeed end
+        walkSpeedNormal += 10
+        atualizarWalkSpeed()
     elseif input.KeyCode == Enum.KeyCode.R then
         LocalPlayer:LoadCharacter()
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.Q then
+        boosting = false
+        atualizarWalkSpeed()
     end
 end)
