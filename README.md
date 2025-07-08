@@ -15,9 +15,7 @@ local config = {
     autoFarm = false,
     infiniteJump = false,
     noclip = false,
-    fly = false,
-    flySpeed = 3,
-    walkSpeed = 30,
+    teleport = false,
     alertaProximidade = false,
     randomTP = false,
     espPlayers = false,
@@ -58,7 +56,7 @@ title.BackgroundTransparency = 1
 local info = Instance.new("TextLabel", frame)
 info.Size = UDim2.new(1, 0, 0, 20)
 info.Position = UDim2.new(0, 0, 1, -25)
-info.Text = "F = Fly | T = Random TP | Q = Boost | V = Float To Base"
+info.Text = "F = Teleport | T = Random TP | Q = Boost | V = Float To Base"
 info.TextColor3 = Color3.fromRGB(255,255,150)
 info.Font = Enum.Font.Gotham
 info.TextSize = 12
@@ -66,6 +64,19 @@ info.BackgroundTransparency = 1
 info.Parent = frame
 
 -- Funções contínuas
+
+-- Tecla para descer 100
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.B then
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = hrp.CFrame - Vector3.new(0, 100, 0)
+        end
+    end
+end)
+
 RunService.RenderStepped:Connect(function()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -79,8 +90,8 @@ RunService.RenderStepped:Connect(function()
     if config.noclip and char and char:FindFirstChildOfClass("Humanoid") then
         char:FindFirstChildOfClass("Humanoid"):ChangeState(11)
     end
-    if config.fly and hrp then
-        hrp.Velocity = Vector3.new(0, config.flySpeed * 50, 0)
+    if config.teleport and hrp then
+        hrp.CFrame = hrp.CFrame + Vector3.new(0, 100, 0)
     end
     if config.speedBoost and hrp then
         hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 2
@@ -108,6 +119,9 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
     if input.KeyCode == Enum.KeyCode.V then
         config.floatToBase = not config.floatToBase
+    end
+    if input.KeyCode == Enum.KeyCode.F then
+        config.teleport = not config.teleport
     end
 end)
 
@@ -154,7 +168,7 @@ end
 criarBotao("✅ Auto Farm", 1, "autoFarm")
 criarBotao("🌀 Infinite Jump", 2, "infiniteJump")
 criarBotao("🚪 Noclip", 3, "noclip")
-criarBotao("🛸 Fly", 4, "fly")
+criarBotao("🛸 Teleport (F)", 4, "teleport")
 criarBotao("🔊 Alerta Proximidade", 5, "alertaProximidade")
 criarBotao("👁️ ESP Jogadores", 6, "espPlayers")
 criarBotao("💨 Boost Velocidade (Q)", 7, "speedBoost")
