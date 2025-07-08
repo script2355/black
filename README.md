@@ -80,17 +80,38 @@ end)
 RunService.RenderStepped:Connect(function()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if config.autoFarm then
+
+    if config.autoFarm and hrp then
+        local maisProximo = nil
+        local distMin = math.huge
         for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("ProximityPrompt") then
-                pcall(function() fireproximityprompt(obj) end)
+            if obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent:IsA("Model") then
+                local model = obj.Parent
+                local modelPos = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Head")
+                if modelPos then
+                    local dist = (modelPos.Position - hrp.Position).Magnitude
+                    if dist < distMin then
+                        distMin = dist
+                        maisProximo = obj
+                    end
+                end
             end
         end
+
+        if maisProximo then
+            local targetPos = maisProximo.Parent:FindFirstChild("HumanoidRootPart") or maisProximo.Parent:FindFirstChild("Head")
+            if targetPos then
+                hrp.CFrame = CFrame.new(targetPos.Position + Vector3.new(0, 3, 3))
+            end
+            fireproximityprompt(maisProximo, 0)
+            wait(1)
+        end
     end
+
     if config.noclip and char and char:FindFirstChildOfClass("Humanoid") then
         char:FindFirstChildOfClass("Humanoid"):ChangeState(11)
     end
-        if config.speedBoost and hrp then
+    if config.speedBoost and hrp then
         hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 2
     end
     if config.floatToBase and hrp then
